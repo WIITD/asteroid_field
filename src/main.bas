@@ -1,18 +1,15 @@
-#include Once "fbgfx.bi"
+#include Once "raylib.bi"
 #include Once "player.bas"
 #include Once "asteroid.bas"
-#include Once "fps.bas"
 
 Randomize Timer, 1
 
 Dim Shared As Boolean debug = False
 Dim Shared As Long game_tick
 Dim Shared As Long game_score
-Dim Shared As TFrameTimer fps
 
 Dim Shared As Integer game_state = 0 '' menu -> 0; start -> 1;game -> 2; end -> 3
 
-Dim Shared As FB.EVENT ev
 Dim Shared As TPlayer ply = TPlayer(400, 300, 3.14)
 
 Dim Shared As TAsteroid astrs(48)
@@ -22,45 +19,32 @@ For i As Integer = 0 To astr_count
   astrs(i) = TAsteroid(Rnd * 800, Rnd * 600 , Rnd * 6.28, (Rnd * 3) + 1, (Rnd * 40) + 10)
 Next i
 
-Dim Shared As Integer starsx(32)
-Dim Shared As Integer starsy(32)
+Dim Shared As Vector2 stars(32)
 
-For i As Integer = 1 To 32
-  starsx(i) = Rnd * 800
-  starsy(i) = Rnd * 600
+For i As Integer = 0 To 32 
+  stars(i).x = Rnd * 800
+  stars(i).y = Rnd * 600
 Next i
 
 Declare Sub DebugPrint(_var As Boolean)
 
 ' init app '
 
-Screen 19, 256, 0
+InitWindow(800, 600, "Asteroid Field")
+SetTargetFPS(30)
 
-WindowTitle "asteroid_field"
-
-Do
+While Not WindowShouldClose()
   ' update '
-  fps.Update()
   game_tick += 1
-  If ScreenEvent(@ev) Then
-    Select Case ev.type
-     Case FB.EVENT_KEY_PRESS
-            If (ev.scancode = FB.SC_ESCAPE) Then
-                End
-            End If
-            If (ev.scancode = FB.SC_F1) Then
-                debug = Not debug
-            End If
-      Case FB.EVENT_WINDOW_CLOSE
-        End
-    End Select
+  If IsKeyPressed(KEY_F1) Then
+      debug = Not debug
   End If
   
   ' game state update '
   Select Case game_state
     ' menu '
     Case 0
-      If MultiKey(FB.SC_ENTER) Then game_state = 1
+      If IsKeyPressed(KEY_ENTER) Then game_state = 1
       
       For i As Integer = 0 To astr_count
         astrs(i).UpdateType()
@@ -117,19 +101,19 @@ Do
   End Select
 
   ' draw '
-  ScreenLock
-  Cls
+  BeginDrawing()
+  ClearBackground(BLACK)
 
   ' game state draw '
   Select Case game_state
     ' menu '
     Case 0
-      Draw String (15, 15), "Asteroid Field by WIITD"
-      Draw String (30, 40), "Enter to START"
-      Draw String (30, 65), "Escape to EXIT"
+      DrawText("Asteroid Field by WIITD", 15, 5, 25, WHITE)
+      DrawText("Enter to START", 30, 40, 20, WHITE)
+      DrawText("Escape to EXIT", 30, 65, 20, WHITE)
       
       For i As Integer = 1 To 32
-        PSet (starsx(i), starsy(i)), 15
+        DrawPixel(stars(i).x, stars(i).y, WHITE)
       Next i
       
       For i As Integer = 0 To astr_count
@@ -139,32 +123,25 @@ Do
     ' game '
     Case 2
       For i As Integer = 1 To 32
-        PSet (starsx(i), starsy(i)), 15
+        DrawPixel(stars(i).x, stars(i).y, WHITE)
       Next i
       For i As Integer = 0 To astr_count
         astrs(i).DrawType()
       Next i
-      Draw String (380, 5), "SCORE: " & game_score, 15
+      DrawText("SCORE: " & game_score, 370, 5, 20, WHITE)
       ply.DrawType()
       DebugPrint(debug)
     
   End Select
   
-  ScreenUnlock
-  Sleep 32, 1
-Loop
-
-End
+  EndDrawing()
+Wend
+CloseWindow()
 
 Sub DebugPrint(_var As Boolean)
   If _var Then
-    Draw String (5, 5 ),  "dx: " & ply.dx, 2
-    Draw String (5, 25),  "dy: " & ply.dy, 2
-    Draw String (5, 45),  "rot: " & ply.rot, 15
-    Draw String (5, 65),  "vx: " & ply.vx, 15
-    Draw String (5, 85),  "vy: " & ply.vy, 15
-    Draw String (5, 105), "fps: " & fps.GetFPS(), 15
-    Draw String (5, 125), "game tick: " & game_tick, 15
+    DrawText("fps: " & GetFPS(), 5, 5, 12, WHITE)
+    DrawText("game tick: " & game_tick, 5, 25, 12, WHITE)
   End If
 End Sub
 

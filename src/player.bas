@@ -1,15 +1,12 @@
-#Include "fbgfx.bi"
+#Include "raylib.bi"
 #Include Once "asteroid.bas"
 
 ' player '
 Type TPlayer
-  As Single x
-  As Single y
+  As Vector2 position
+  As Vector2 direction
+  As Vector2 velocity
   As Single rot
-  As Single dx
-  As Single dy
-  As Single vx
-  As Single vy
   As Integer r
   As single max_speed
 
@@ -22,72 +19,64 @@ Type TPlayer
 End Type
 
 Constructor TPlayer(_x As Single, _y As Single, _rot As Single)
-  This.x = _x
-  This.y = _y
+  This.position = Vector2(_x, _y)
   This.rot = _rot
-  This.dx = Sin(_rot)
-  This.dy = Cos(_rot)
-  This.vx = 0
-  This.vy = 0
+  This.direction = Vector2(Sin(_rot), Cos(_rot))
+  This.velocity = Vector2(0, 0)
   This.r = 10
   This.max_speed = 3
 End Constructor
 
 Sub TPlayer.UpdateType()
   ' player rotation '
-  If MultiKey(FB.SC_LEFT) Or MultiKey(FB.SC_A) Then This.rot += 0.136
-  If MultiKey(FB.SC_RIGHT) Or MultiKey(FB.SC_D) Then This.rot -= 0.136
-  
-  ''If MultiKey(FB.SC_PAGEUP) Then This.r += 1
-  ''If MultiKey(FB.SC_PAGEDOWN) Then This.r -= 1
+  If IsKeyDown(KEY_LEFT) Or IsKeyDown(KEY_A) Then This.rot += 0.136
+  If IsKeyDown(KEY_RIGHT) Or IsKeyDown(KEY_D) Then This.rot -= 0.136
   
   ' speed and direction movement controls '
-  If MultiKey(FB.SC_UP) Or MultiKey(FB.SC_W) Then
-    This.vx += This.dx * 0.2
-    This.vy += This.dy * 0.2
+  If IsKeyDown(KEY_UP) Or IsKeyDown(KEY_W) Then
+    This.velocity.x += This.direction.x * 0.2
+    This.velocity.y += This.direction.y * 0.2
   End If  
-  If MultiKey(FB.SC_DOWN) Or MultiKey(FB.SC_S) Then
-    This.vx -= This.dx * 0.1
-    This.vy -= This.dy * 0.1
+  If IsKeyDown(KEY_DOWN) Or IsKeyDown(KEY_S) Then
+    This.velocity.x -= This.direction.x * 0.1
+    This.velocity.y -= This.direction.y * 0.1
   End If
   
   ' player movement '
-  This.x += This.vx
-  This.y += This.vy
-  
+  This.position.x += This.velocity.x
+  This.position.y += This.velocity.y
+
   ' wrap around the screen '
-  If This.x - This.r > 800 Then This.x = -This.r
-  If This.x + This.r < 0 Then This.x = 800 + This.r
-  If This.y - This.r > 600 Then This.y = -This.r
-  If This.y + This.r < 0 Then This.y = 600 + This.r
+  If This.position.x - This.r > 800 Then This.position.x = -This.r
+  If This.position.x + This.r < 0 Then This.position.x = 800 + This.r
+  If This.position.y - This.r > 600 Then This.position.y = -This.r
+  If This.position.y + This.r < 0 Then This.position.y = 600 + This.r
   
   ' prevent rotation being larger then 2Pi or smaller then 0 '
   If This.rot > 6.28 Then This.rot = 0
   If This.rot < 0 Then This.rot = 6.28
     
   ' speed bounds '
-  If This.vx > This.dx + This.max_speed Then This.vx = This.dx + This.max_speed
-  If This.vx < This.dx - This.max_speed Then This.vx = This.dx - This.max_speed
-  If This.vy > This.dy + This.max_speed Then This.vy = This.dy + This.max_speed
-  If This.vy < This.dy - This.max_speed Then This.vy = This.dy - This.max_speed
+  If This.velocity.x > This.direction.x + This.max_speed Then This.velocity.x = This.direction.x + This.max_speed
+  If This.velocity.x < This.direction.x - This.max_speed Then This.velocity.x = This.direction.x - This.max_speed
+  If This.velocity.y > This.direction.y + This.max_speed Then This.velocity.y = This.direction.y + This.max_speed
+  If This.velocity.y < This.direction.y - This.max_speed Then This.velocity.y = This.direction.y - This.max_speed
 
   ' calculate movement direction '
-  This.dx = Sin(This.rot)
-  This.dy = Cos(This.rot)
+  This.direction.x = Sin(This.rot)
+  This.direction.y = Cos(This.rot)
 End Sub
 
 
 Sub TPlayer.DrawType()
-  ''Circle (This.x, This.y), This.r/2, 15
-  ''Line (This.x, This.y) - (This.x + This.dx * This.r, This.y + This.dy * This.r), 15
-  Line (This.x + This.dx * This.r, This.y + This.dy * This.r) - (This.x + Sin(This.rot + 2.443461) * This.r, This.y + Cos(This.rot + 2.443461) * This.r), 15
-  Line (This.x + This.dx * This.r, This.y + This.dy * This.r) - (This.x + Sin(This.rot - 2.443461) * This.r, This.y + Cos(This.rot - 2.443461) * This.r), 15
-  Line (This.x + Sin(This.rot + 2.443461) * This.r, This.y + Cos(This.rot + 2.443461) * This.r) - (This.x + Sin(This.rot - 2.443461) * This.r, This.y + Cos(This.rot - 2.443461) * This.r), 15
+  DrawLine(This.position.x + This.direction.x * This.r, This.position.y + This.direction.y * This.r, This.position.x + Sin(This.rot + 2.443461) * This.r, This.position.y + Cos(This.rot + 2.443461) * This.r, WHITE)
+  DrawLine(This.position.x + This.direction.x * This.r, This.position.y + This.direction.y * This.r, This.position.x + Sin(This.rot - 2.443461) * This.r, This.position.y + Cos(This.rot - 2.443461) * This.r, WHITE)
+  DrawLine(This.position.x + Sin(This.rot + 2.443461) * This.r, This.position.y + Cos(This.rot + 2.443461) * This.r, This.position.x + Sin(This.rot - 2.443461) * This.r, This.position.y + Cos(This.rot - 2.443461) * This.r, WHITE)
 End Sub
 
 Function TPlayer.GetCollision(_ast As TAsteroid) As Boolean
-  Dim As Single _x = This.x - _ast.x
-  Dim As Single _y = This.y - _ast.y
+  Dim As Single _x = This.position.x - _ast.position.x
+  Dim As Single _y = This.position.y - _ast.position.y
   Dim As Single _dist = Sqr(_x * _x + _y * _y)
   Dim As Integer _rmax = This.r / 2 + _ast.r
   If _dist > _rmax Then 
